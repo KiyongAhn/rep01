@@ -1,0 +1,10 @@
+name: report_generator
+description: Generate various types of reports (sales, analytics, performance)
+triggers:
+  - create report
+  - generate report
+  - sales report
+  - analytics report
+  - performance report
+entry_point: main.py
+version: 1.0.0

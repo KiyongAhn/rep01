@@ -1,0 +1,10 @@
+name: email_composer
+description: Compose professional emails for various purposes
+triggers:
+  - write email
+  - compose email
+  - draft email
+  - send email
+  - email template
+entry_point: main.py
+version: 1.0.0
