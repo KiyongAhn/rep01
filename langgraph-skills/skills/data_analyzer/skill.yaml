@@ -1,0 +1,10 @@
+name: data_analyzer
+description: Analyze datasets and produce statistical summaries and insights
+triggers:
+  - analyze data
+  - data analysis
+  - statistical summary
+  - dataset insights
+  - summarize data
+entry_point: main.py
+version: 1.0.0

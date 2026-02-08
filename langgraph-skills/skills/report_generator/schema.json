@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "properties": {
+    "report_type": {
+      "type": "string",
+      "enum": ["sales", "analytics", "performance"],
+      "description": "Type of report to generate"
+    },
+    "period": {
+      "type": "string",
+      "description": "Time period (Q1, Q2, Q3, Q4, or year)"
+    },
+    "data_source": {
+      "type": "string",
+      "description": "Optional path to data file"
+    }
+  },
+  "required": ["report_type", "period"]
+}
