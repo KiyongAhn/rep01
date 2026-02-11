@@ -1,0 +1,14 @@
+name: webapp_testing
+description: Test local web applications using Playwright - verify frontend functionality, capture screenshots, and view browser logs
+triggers:
+  - test webapp
+  - test web app
+  - test website
+  - webapp testing
+  - browser test
+  - playwright test
+  - screenshot page
+  - ui test
+  - frontend test
+entry_point: main.py
+version: 1.0.0

@@ -34,6 +34,7 @@ class TestSkillRegistry:
         assert "report_generator" in names
         assert "data_analyzer" in names
         assert "email_composer" in names
+        assert "webapp_testing" in names
 
     def test_search_finds_report(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -52,6 +53,18 @@ class TestSkillRegistry:
         results = registry.search_skills("analyze data from the CSV")
         names = [r["name"] for r in results]
         assert "data_analyzer" in names
+
+    def test_search_finds_webapp_testing(self):
+        registry = SkillRegistry(base_path=SKILLS_DIR)
+        results = registry.search_skills("I need to test webapp on localhost")
+        names = [r["name"] for r in results]
+        assert "webapp_testing" in names
+
+    def test_search_finds_webapp_testing_by_playwright(self):
+        registry = SkillRegistry(base_path=SKILLS_DIR)
+        results = registry.search_skills("run a playwright test on my site")
+        names = [r["name"] for r in results]
+        assert "webapp_testing" in names
 
     def test_search_no_match(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -125,6 +138,30 @@ class TestSkillExecutor:
         assert "body" in result
         assert "Alice" in result["body"]
 
+    def test_load_context_webapp_testing(self, executor):
+        ctx = executor.load_skill_context("webapp_testing")
+        assert "error" not in ctx
+        assert "Web Application Testing" in ctx["skill_doc"]
+        assert ctx["schema"] is not None
+        assert "url" in ctx["schema"]["properties"]
+        assert "actions" in ctx["schema"]["properties"]
+
+    def test_execute_webapp_testing(self, executor):
+        result = executor.execute_skill(
+            "webapp_testing",
+            {
+                "url": "http://localhost:3000",
+                "actions": [
+                    {"type": "screenshot", "path": "/tmp/test.png"},
+                    {"type": "click", "selector": "button#submit"},
+                ],
+            },
+        )
+        assert result["status"] == "success"
+        assert len(result["results"]) == 2
+        assert result["results"][0]["action"] == "screenshot"
+        assert result["results"][1]["action"] == "click"
+
     def test_execute_missing_skill(self, executor):
         result = executor.execute_skill("nonexistent", {})
         assert "error" in result
@@ -188,6 +225,105 @@ class TestEmailComposerSkill:
             }
         )
         assert "Milestone 1 done" in result["body"]
+
+
+class TestWebappTestingSkill:
+    def test_screenshot_action(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:8080",
+            "actions": [{"type": "screenshot", "path": "/tmp/shot.png"}],
+        })
+        assert result["status"] == "success"
+        assert result["url"] == "http://localhost:8080"
+        assert result["results"][0]["status"] == "success"
+        assert result["results"][0]["path"] == "/tmp/shot.png"
+
+    def test_click_and_fill_actions(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:3000",
+            "actions": [
+                {"type": "click", "selector": "#login-btn"},
+                {"type": "fill", "selector": "#username", "value": "admin"},
+                {"type": "fill", "selector": "#password", "value": "secret"},
+                {"type": "click", "selector": "#submit"},
+            ],
+        })
+        assert result["status"] == "success"
+        assert len(result["results"]) == 4
+        assert all(r["status"] == "success" for r in result["results"])
+        assert result["results"][1]["value"] == "admin"
+
+    def test_check_text_action(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:3000",
+            "actions": [{"type": "check_text", "text": "Welcome"}],
+        })
+        assert result["results"][0]["found"] is True
+
+    def test_console_logs_action(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:3000",
+            "actions": [{"type": "get_console_logs"}],
+        })
+        assert result["status"] == "success"
+        assert len(result["console_logs"]) > 0
+        assert result["console_logs"][0]["level"] == "info"
+
+    def test_unknown_action_type(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:3000",
+            "actions": [{"type": "hover", "selector": "#btn"}],
+        })
+        assert result["status"] == "success"
+        assert result["results"][0]["status"] == "error"
+        assert "Unknown action type" in result["results"][0]["message"]
+
+    def test_no_actions_error(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({"url": "http://localhost:3000", "actions": []})
+        assert result["status"] == "error"
+
+    def test_browser_config(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:3000",
+            "actions": [{"type": "screenshot"}],
+            "headless": False,
+            "wait_for_idle": False,
+        })
+        assert result["browser_config"]["headless"] is False
+        assert result["browser_config"]["wait_for_idle"] is False
+
+    def test_full_e2e_flow(self):
+        from skills.webapp_testing.main import execute
+
+        result = execute({
+            "url": "http://localhost:5173",
+            "actions": [
+                {"type": "screenshot", "path": "/tmp/before.png"},
+                {"type": "fill", "selector": "#search", "value": "test query"},
+                {"type": "click", "selector": "button[type=submit]"},
+                {"type": "check_text", "text": "Results"},
+                {"type": "screenshot", "path": "/tmp/after.png"},
+                {"type": "get_console_logs"},
+            ],
+        })
+        assert result["status"] == "success"
+        assert len(result["results"]) == 6
+        assert all(r["status"] == "success" for r in result["results"])
+        assert len(result["console_logs"]) > 0
 
 
 # ===================================================================
