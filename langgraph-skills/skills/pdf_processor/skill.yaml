@@ -1,0 +1,17 @@
+name: pdf_processor
+description: Process PDF files - read, extract text/tables, merge, split, rotate pages, add watermarks, create new PDFs, and encrypt/decrypt
+triggers:
+  - pdf
+  - read pdf
+  - extract pdf
+  - merge pdf
+  - split pdf
+  - create pdf
+  - convert pdf
+  - pdf text
+  - pdf table
+  - rotate pdf
+  - watermark pdf
+  - encrypt pdf
+entry_point: main.py
+version: 1.0.0

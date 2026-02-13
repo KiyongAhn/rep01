@@ -35,6 +35,7 @@ class TestSkillRegistry:
         assert "data_analyzer" in names
         assert "email_composer" in names
         assert "webapp_testing" in names
+        assert "pdf_processor" in names
 
     def test_search_finds_report(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -65,6 +66,18 @@ class TestSkillRegistry:
         results = registry.search_skills("run a playwright test on my site")
         names = [r["name"] for r in results]
         assert "webapp_testing" in names
+
+    def test_search_finds_pdf_processor(self):
+        registry = SkillRegistry(base_path=SKILLS_DIR)
+        results = registry.search_skills("extract text from a pdf file")
+        names = [r["name"] for r in results]
+        assert "pdf_processor" in names
+
+    def test_search_finds_pdf_by_merge(self):
+        registry = SkillRegistry(base_path=SKILLS_DIR)
+        results = registry.search_skills("merge pdf documents together")
+        names = [r["name"] for r in results]
+        assert "pdf_processor" in names
 
     def test_search_no_match(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -161,6 +174,22 @@ class TestSkillExecutor:
         assert len(result["results"]) == 2
         assert result["results"][0]["action"] == "screenshot"
         assert result["results"][1]["action"] == "click"
+
+    def test_load_context_pdf_processor(self, executor):
+        ctx = executor.load_skill_context("pdf_processor")
+        assert "error" not in ctx
+        assert "PDF Processor" in ctx["skill_doc"]
+        assert ctx["schema"] is not None
+        assert "operation" in ctx["schema"]["properties"]
+
+    def test_execute_pdf_processor(self, executor):
+        result = executor.execute_skill(
+            "pdf_processor",
+            {"operation": "extract_text", "input_path": "report.pdf"},
+        )
+        assert result["status"] == "success"
+        assert result["operation"] == "extract_text"
+        assert result["pages_processed"] == 10
 
     def test_execute_missing_skill(self, executor):
         result = executor.execute_skill("nonexistent", {})
@@ -324,6 +353,137 @@ class TestWebappTestingSkill:
         assert len(result["results"]) == 6
         assert all(r["status"] == "success" for r in result["results"])
         assert len(result["console_logs"]) > 0
+
+
+class TestPdfProcessorSkill:
+    def test_extract_text(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "extract_text", "input_path": "doc.pdf"})
+        assert result["status"] == "success"
+        assert result["page_count"] == 10
+        assert "Extracted text" in result["text"]
+
+    def test_extract_text_specific_pages(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "extract_text",
+            "input_path": "doc.pdf",
+            "pages": [0, 2, 4],
+        })
+        assert result["status"] == "success"
+        assert result["pages_processed"] == 3
+
+    def test_extract_tables(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "extract_tables", "input_path": "data.pdf"})
+        assert result["status"] == "success"
+        assert result["tables_found"] == 2
+        assert result["tables"][0]["headers"] == ["Name", "Value", "Change"]
+
+    def test_extract_metadata(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "extract_metadata", "input_path": "doc.pdf"})
+        assert result["status"] == "success"
+        assert result["metadata"]["title"] == "Quarterly Report"
+        assert result["metadata"]["author"] == "Finance Team"
+
+    def test_merge(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "merge",
+            "input_paths": ["a.pdf", "b.pdf", "c.pdf"],
+            "output_path": "/tmp/merged.pdf",
+        })
+        assert result["status"] == "success"
+        assert result["files_merged"] == 3
+        assert result["output_path"] == "/tmp/merged.pdf"
+
+    def test_merge_no_inputs(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "merge", "input_paths": []})
+        assert result["status"] == "error"
+
+    def test_split(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "split",
+            "input_path": "big.pdf",
+            "output_path": "/tmp",
+        })
+        assert result["status"] == "success"
+        assert result["pages_split"] == 10
+        assert len(result["output_files"]) == 10
+
+    def test_rotate(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "rotate",
+            "input_path": "doc.pdf",
+            "rotation_degrees": 180,
+            "pages": [0, 1],
+        })
+        assert result["status"] == "success"
+        assert result["rotation_degrees"] == 180
+        assert result["pages_rotated"] == [0, 1]
+
+    def test_create(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "create",
+            "output_path": "/tmp/new.pdf",
+            "content": {
+                "title": "My Document",
+                "body": ["Paragraph 1", "Paragraph 2", "Paragraph 3"],
+            },
+        })
+        assert result["status"] == "success"
+        assert result["title"] == "My Document"
+        assert result["paragraphs"] == 3
+
+    def test_encrypt(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "encrypt",
+            "input_path": "doc.pdf",
+            "password": "s3cret",
+        })
+        assert result["status"] == "success"
+        assert result["encrypted"] is True
+
+    def test_encrypt_no_password(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "encrypt", "input_path": "doc.pdf"})
+        assert result["status"] == "error"
+
+    def test_add_watermark(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({
+            "operation": "add_watermark",
+            "input_path": "doc.pdf",
+            "watermark_text": "DRAFT",
+        })
+        assert result["status"] == "success"
+        assert result["watermark_text"] == "DRAFT"
+        assert result["pages_watermarked"] == 10
+
+    def test_unknown_operation(self):
+        from skills.pdf_processor.main import execute
+
+        result = execute({"operation": "compress"})
+        assert result["status"] == "error"
+        assert "Unknown operation" in result["message"]
 
 
 # ===================================================================
