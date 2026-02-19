@@ -1,0 +1,62 @@
+{
+  "type": "object",
+  "properties": {
+    "operation": {
+      "type": "string",
+      "enum": [
+        "extract_text",
+        "extract_tables",
+        "extract_metadata",
+        "merge",
+        "split",
+        "rotate",
+        "create",
+        "encrypt",
+        "add_watermark"
+      ],
+      "description": "The PDF operation to perform"
+    },
+    "input_path": {
+      "type": "string",
+      "description": "Path to the input PDF file"
+    },
+    "input_paths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "List of PDF paths for merge operation"
+    },
+    "output_path": {
+      "type": "string",
+      "description": "Path for the output file"
+    },
+    "pages": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "description": "Page numbers to process (0-indexed)"
+    },
+    "rotation_degrees": {
+      "type": "integer",
+      "description": "Degrees to rotate pages (default 90)"
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "description": "Content for creating a new PDF"
+    },
+    "password": {
+      "type": "string",
+      "description": "Password for encryption"
+    },
+    "watermark_text": {
+      "type": "string",
+      "description": "Text to use as watermark"
+    }
+  },
+  "required": ["operation"]
+}

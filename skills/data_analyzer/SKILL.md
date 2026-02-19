@@ -1,3 +1,8 @@
+---
+name: data_analyzer
+description: Analyze datasets and produce statistical summaries and insights
+---
+
 # Data Analyzer Skill
 
 ## Purpose

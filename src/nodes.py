@@ -6,7 +6,7 @@ import json
 import logging
 from typing import Any, Optional
 
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import AzureChatOpenAI
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from typing_extensions import TypedDict
 
@@ -33,8 +33,8 @@ class GraphState(TypedDict):
 # Shared helpers
 # ------------------------------------------------------------------
 
-def _get_llm(model: str = "claude-sonnet-4-20250514") -> ChatAnthropic:
-    return ChatAnthropic(model=model, temperature=0)
+def _get_llm() -> AzureChatOpenAI:
+    return AzureChatOpenAI(temperature=0)
 
 
 def _last_human_query(messages: list[BaseMessage]) -> str:
