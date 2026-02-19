@@ -171,6 +171,19 @@ def _add_watermark(params: dict) -> dict:
     }
 
 
+def _fill_form(params: dict) -> dict:
+    input_path = params.get("input_path", "form.pdf")
+    output_path = params.get("output_path", "/tmp/filled_form.pdf")
+    field_values = params.get("field_values", {})
+    return {
+        "status": "success",
+        "operation": "fill_form",
+        "input_path": input_path,
+        "output_path": output_path,
+        "fields_filled": len(field_values),
+    }
+
+
 _OPERATIONS: dict[str, Any] = {
     "extract_text": _extract_text,
     "extract_tables": _extract_tables,
@@ -181,6 +194,7 @@ _OPERATIONS: dict[str, Any] = {
     "create": _create,
     "encrypt": _encrypt,
     "add_watermark": _add_watermark,
+    "fill_form": _fill_form,
 }
 
 
