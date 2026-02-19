@@ -1,3 +1,8 @@
+---
+name: webapp_testing
+description: Test local web applications using Playwright - verify frontend functionality, capture screenshots, and view browser logs
+---
+
 # Web Application Testing Skill
 
 ## Purpose

@@ -1,3 +1,8 @@
+---
+name: email_composer
+description: Compose professional emails for various purposes
+---
+
 # Email Composer Skill
 
 ## Purpose

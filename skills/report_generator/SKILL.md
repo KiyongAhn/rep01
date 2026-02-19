@@ -1,3 +1,8 @@
+---
+name: report_generator
+description: Generate various types of reports (sales, analytics, performance)
+---
+
 # Report Generator Skill
 
 ## Purpose

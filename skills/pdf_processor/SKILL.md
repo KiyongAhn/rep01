@@ -1,3 +1,8 @@
+---
+name: pdf_processor
+description: Process PDF files - read, extract text/tables, merge, split, rotate pages, add watermarks, create new PDFs, and encrypt/decrypt
+---
+
 # PDF Processor Skill
 
 Based on the [Anthropic official pdf skill](https://github.com/anthropics/skills/tree/main/skills/pdf).
