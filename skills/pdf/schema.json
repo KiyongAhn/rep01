@@ -12,7 +12,8 @@
         "rotate",
         "create",
         "encrypt",
-        "add_watermark"
+        "add_watermark",
+        "fill_form"
       ],
       "description": "The PDF operation to perform"
     },
@@ -56,6 +57,10 @@
     "watermark_text": {
       "type": "string",
       "description": "Text to use as watermark"
+    },
+    "field_values": {
+      "type": "object",
+      "description": "Field ID to value mapping for form filling"
     }
   },
   "required": ["operation"]

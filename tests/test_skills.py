@@ -35,7 +35,7 @@ class TestSkillRegistry:
         assert "data_analyzer" in names
         assert "email_composer" in names
         assert "webapp_testing" in names
-        assert "pdf_processor" in names
+        assert "pdf" in names
 
     def test_search_finds_report(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -67,17 +67,17 @@ class TestSkillRegistry:
         names = [r["name"] for r in results]
         assert "webapp_testing" in names
 
-    def test_search_finds_pdf_processor(self):
+    def test_search_finds_pdf(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
         results = registry.search_skills("extract text from a pdf file")
         names = [r["name"] for r in results]
-        assert "pdf_processor" in names
+        assert "pdf" in names
 
     def test_search_finds_pdf_by_merge(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
         results = registry.search_skills("merge pdf documents together")
         names = [r["name"] for r in results]
-        assert "pdf_processor" in names
+        assert "pdf" in names
 
     def test_search_no_match(self):
         registry = SkillRegistry(base_path=SKILLS_DIR)
@@ -175,16 +175,16 @@ class TestSkillExecutor:
         assert result["results"][0]["action"] == "screenshot"
         assert result["results"][1]["action"] == "click"
 
-    def test_load_context_pdf_processor(self, executor):
-        ctx = executor.load_skill_context("pdf_processor")
+    def test_load_context_pdf(self, executor):
+        ctx = executor.load_skill_context("pdf")
         assert "error" not in ctx
-        assert "PDF Processor" in ctx["skill_doc"]
+        assert "PDF Processing" in ctx["skill_doc"]
         assert ctx["schema"] is not None
         assert "operation" in ctx["schema"]["properties"]
 
-    def test_execute_pdf_processor(self, executor):
+    def test_execute_pdf(self, executor):
         result = executor.execute_skill(
-            "pdf_processor",
+            "pdf",
             {"operation": "extract_text", "input_path": "report.pdf"},
         )
         assert result["status"] == "success"
@@ -355,9 +355,9 @@ class TestWebappTestingSkill:
         assert len(result["console_logs"]) > 0
 
 
-class TestPdfProcessorSkill:
+class TestPdfSkill:
     def test_extract_text(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "extract_text", "input_path": "doc.pdf"})
         assert result["status"] == "success"
@@ -365,7 +365,7 @@ class TestPdfProcessorSkill:
         assert "Extracted text" in result["text"]
 
     def test_extract_text_specific_pages(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "extract_text",
@@ -376,7 +376,7 @@ class TestPdfProcessorSkill:
         assert result["pages_processed"] == 3
 
     def test_extract_tables(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "extract_tables", "input_path": "data.pdf"})
         assert result["status"] == "success"
@@ -384,7 +384,7 @@ class TestPdfProcessorSkill:
         assert result["tables"][0]["headers"] == ["Name", "Value", "Change"]
 
     def test_extract_metadata(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "extract_metadata", "input_path": "doc.pdf"})
         assert result["status"] == "success"
@@ -392,7 +392,7 @@ class TestPdfProcessorSkill:
         assert result["metadata"]["author"] == "Finance Team"
 
     def test_merge(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "merge",
@@ -404,13 +404,13 @@ class TestPdfProcessorSkill:
         assert result["output_path"] == "/tmp/merged.pdf"
 
     def test_merge_no_inputs(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "merge", "input_paths": []})
         assert result["status"] == "error"
 
     def test_split(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "split",
@@ -422,7 +422,7 @@ class TestPdfProcessorSkill:
         assert len(result["output_files"]) == 10
 
     def test_rotate(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "rotate",
@@ -435,7 +435,7 @@ class TestPdfProcessorSkill:
         assert result["pages_rotated"] == [0, 1]
 
     def test_create(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "create",
@@ -450,7 +450,7 @@ class TestPdfProcessorSkill:
         assert result["paragraphs"] == 3
 
     def test_encrypt(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "encrypt",
@@ -461,13 +461,13 @@ class TestPdfProcessorSkill:
         assert result["encrypted"] is True
 
     def test_encrypt_no_password(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "encrypt", "input_path": "doc.pdf"})
         assert result["status"] == "error"
 
     def test_add_watermark(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({
             "operation": "add_watermark",
@@ -478,8 +478,19 @@ class TestPdfProcessorSkill:
         assert result["watermark_text"] == "DRAFT"
         assert result["pages_watermarked"] == 10
 
+    def test_fill_form(self):
+        from skills.pdf.main import execute
+
+        result = execute({
+            "operation": "fill_form",
+            "input_path": "form.pdf",
+            "field_values": {"name": "John", "email": "john@test.com"},
+        })
+        assert result["status"] == "success"
+        assert result["fields_filled"] == 2
+
     def test_unknown_operation(self):
-        from skills.pdf_processor.main import execute
+        from skills.pdf.main import execute
 
         result = execute({"operation": "compress"})
         assert result["status"] == "error"
